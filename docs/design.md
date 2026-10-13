@@ -1,6 +1,6 @@
 # Design
 
-Status: draft, 2026-10-12. Not yet deployed.
+Status: in use since 2026-10-12 on a single-node pool serving one personal account's private repositories.
 
 ## Problem
 

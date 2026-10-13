@@ -6,7 +6,7 @@ This sets up one VM that runs k3s, Actions Runner Controller (ARC) and spillway'
 
 ## 0. Plan the size
 
-Each runner pod requests the CPU and memory in `defaults` (2 CPU, 4 GiB unless overridden). A VM with 4 vCPU and 10 GiB fits two runners plus k3s. Jobs beyond that wait. Give memory-hungry repositories their own `memory` in the config's `repos`.
+Each runner pod requests the CPU and memory in `defaults` (1.5 CPU and 3 GiB, at most 2 runners per repository, unless overridden). A VM with 4 vCPU and 10 GiB fits two runners plus k3s. Jobs beyond that wait. Give memory-hungry repositories their own `memory` in the config's `repos`.
 
 ## 1. An isolated network segment
 

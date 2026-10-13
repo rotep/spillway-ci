@@ -1,5 +1,7 @@
 # spillway
 
+[![CI](https://github.com/rotep/spillway-ci/actions/workflows/ci.yml/badge.svg)](https://github.com/rotep/spillway-ci/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 Overflow GitHub Actions CI to your own hardware when GitHub-hosted minutes run out.
 
 > Status: early (October 2026). One personal account has run its private repositories' CI on a single-node pool since 2026-10-12. There is no release yet; pin a commit SHA. Interfaces may change.
@@ -32,6 +34,26 @@ home: Proxmox VM ─ k3s ─ Actions Runner Controller
 - [`discovery/`](discovery): GitHub App → opted-in private repositories → Helm releases of ARC's `gha-runner-scale-set`.
 - [`templates/spillway.yml`](templates/spillway.yml): the per-repository workflow.
 
+## Is it for you?
+
+| You have | spillway fits | Something else fits better |
+|---|---|---|
+| Private repositories on a personal account, occasionally out of hosted minutes | yes | |
+| Spare hardware at home with Proxmox VE | yes | |
+| Public repositories only | | Hosted runners are free for public repositories |
+| An organization that wants self-hosted runners as the primary CI | | [Actions Runner Controller](https://github.com/actions/actions-runner-controller) directly, with an organization-level scale set |
+| Occasional overflow and no spare hardware | | Raising the Actions budget |
+| Jobs that need Docker (`services:`, `container:`, `docker build`) | not yet | Hosted runners, or ARC in Docker-in-Docker mode |
+
+Requirements:
+
+- A Proxmox VE host that can give one VM 4 vCPU, 10 GiB of memory and 40 GB of disk (two concurrent jobs by default), with outbound HTTPS.
+- A WSL or Linux shell with `ssh` to the host for the installer, or the host's web shell.
+- A GitHub personal account and a GitHub App you create during installation (the installer does it from a manifest).
+- In each adopted repository, a CI workflow that can be made callable ([docs/adopt.md](docs/adopt.md)) and needs no secrets.
+
+Limitations: Linux jobs only, no Docker in jobs, one node by default, and the fallback result is a commit status (`spillway / ci`) that cannot satisfy a required hosted check in branch protection. More in [docs/adopt.md](docs/adopt.md#limits).
+
 ## Use it
 
 1. Read [SECURITY.md](SECURITY.md). Pull request code runs on your machines. spillway serves **private repositories only**; never point it at a public one.
@@ -42,7 +64,8 @@ home: Proxmox VM ─ k3s ─ Actions Runner Controller
    You confirm, press "Create GitHub App" in the browser and paste back the address it opens; when the host's output asks, install the App on all repositories. The App's key is created by GitHub and written only inside the VM. The manual steps behind the installer are in [docs/deploy-proxmox-k3s.md](docs/deploy-proxmox-k3s.md).
 3. Adopt each repository: [docs/adopt.md](docs/adopt.md), or hand [templates/adopt-prompt.md](templates/adopt-prompt.md) to a coding agent.
 4. Operate it from the same shell: `bash deploy/pool.sh status | plan | apply | include add <repo> | update`.
-5. The whole path from nothing to steady state: [docs/roadmap.md](docs/roadmap.md).
+5. When something does not work: [docs/troubleshooting.md](docs/troubleshooting.md).
+6. The whole path from nothing to steady state: [docs/roadmap.md](docs/roadmap.md).
 
 ## Fork it
 
@@ -53,6 +76,12 @@ The deploy scripts, docs and templates name `rotep/spillway-ci` and defaults suc
 ```bash
 npm test   # node --test; Node 22 or later, no dependencies
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Design and alternatives considered: [docs/design.md](docs/design.md).
+
+## Support
+
+Best effort, by one maintainer. Bugs and proposals go to issues; vulnerabilities go to private vulnerability reporting ([SECURITY.md](SECURITY.md)).
 
 ## License
 
