@@ -22,8 +22,9 @@ No existing tool we found does hosted-to-self-hosted overflow; the selection act
 
 ```
 hosted CI fails without starting ─► spillway.yml (in your repository)
-   decide  → was it a runner/billing failure? not a fork?
+   decide  → was it a runner/billing failure? not a fork? still the head?
    ci      → your CI, called with runs-on: spillway, at the PR head
+             (a newer head cancels it)
    report  → commit status "spillway / ci" on the PR head
 
 home: Proxmox VM ─ k3s ─ Actions Runner Controller
@@ -62,14 +63,33 @@ Limitations: Linux jobs only, no Docker in jobs, one node by default, and the fa
    SPILLWAY_PVE_HOST=<ssh destination of your Proxmox host> SPILLWAY_INCLUDE="repo1 repo2" bash deploy/install-from-wsl.sh
    ```
    You confirm, press "Create GitHub App" in the browser and paste back the address it opens; when the host's output asks, install the App on all repositories. The App's key is created by GitHub and written only inside the VM. The manual steps behind the installer are in [docs/deploy-proxmox-k3s.md](docs/deploy-proxmox-k3s.md).
-3. Adopt each repository: [docs/adopt.md](docs/adopt.md), or hand [templates/adopt-prompt.md](templates/adopt-prompt.md) to a coding agent.
-4. Operate it from the same shell: `bash deploy/pool.sh status | plan | apply | include add <repo> | update`.
-5. When something does not work: [docs/troubleshooting.md](docs/troubleshooting.md).
+3. Adopt each repository: [docs/adopt.md](docs/adopt.md), or hand [templates/adopt-prompt.md](templates/adopt-prompt.md) to a coding agent, or run `/spillway:adopt` in Claude Code ([below](#with-claude-code)).
+4. Operate it from the same shell: `bash deploy/pool.sh status | plan | apply | include add <repo> | update`, or `/spillway:pool` in Claude Code.
+5. When something does not work: [docs/troubleshooting.md](docs/troubleshooting.md), or `/spillway:troubleshoot <pull request>` in Claude Code.
 6. The whole path from nothing to steady state: [docs/roadmap.md](docs/roadmap.md).
+
+## With Claude Code
+
+The repository is also a Claude Code plugin with three skills. Install it in Claude Code on your machine:
+
+```text
+/plugin marketplace add rotep/spillway-ci
+/plugin install spillway@spillway
+```
+
+If the repository is private, Claude Code clones it with your git credentials: if `git clone` works in your shell, this works too. When you enable the plugin, Claude Code asks for the values `deploy/pool.sh` reads (`SPILLWAY_PVE_HOST`, `SPILLWAY_SSH`, `SPILLWAY_NET`) and the path of your spillway clone; leave one empty for its default. `claude plugin configure spillway@spillway` shows them later.
+
+| Skill | What it does | Started by |
+|---|---|---|
+| `/spillway:adopt [CI workflow]` | Adopts the current repository as in [templates/adopt-prompt.md](templates/adopt-prompt.md), pinning the actions to the current commit of `main`. | you or Claude |
+| `/spillway:pool <command>` | Runs `deploy/pool.sh`. `status`, `plan` and `include list` run at once; `apply`, `include add`, `include remove` and `update` only after you confirm the exact command. | you only |
+| `/spillway:troubleshoot [pull request]` | Reads `spillway / ci`, the hosted jobs and the `spillway` runs, and matches them to [docs/troubleshooting.md](docs/troubleshooting.md). It asks you for the pool side. | you or Claude |
+
+The skills read this repository's docs and templates, so they change with it. The rule that lets agents merge on `spillway / ci` stays in each adopted repository ([templates/AGENTS.snippet.md](templates/AGENTS.snippet.md)), not in the plugin. Claude Code on the web does not load plugins: there, hand [templates/adopt-prompt.md](templates/adopt-prompt.md) to the session as before.
 
 ## Fork it
 
-The deploy scripts, docs and templates name `rotep/spillway-ci` and defaults such as the bridge `vmbr98` and network `10.98.0.0/24`. Fork the repository, replace `rotep/spillway-ci` in `templates/` and `docs/`, and set the `SPILLWAY_*` variables listed in the headers of `deploy/*.sh` for your host.
+The deploy scripts, docs, templates and skills name `rotep/spillway-ci` and defaults such as the bridge `vmbr98` and network `10.98.0.0/24`. Fork the repository, replace `rotep/spillway-ci` in `templates/`, `docs/`, `skills/`, `.claude-plugin/` and this file, and set the `SPILLWAY_*` variables listed in the headers of `deploy/*.sh` for your host.
 
 ## Develop
 

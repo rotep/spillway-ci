@@ -1,0 +1,15 @@
+{
+  "name": "spillway",
+  "description": "spillway: overflow GitHub Actions CI to your own hardware when GitHub-hosted minutes run out.",
+  "owner": {
+    "name": "rotep",
+    "url": "https://github.com/rotep"
+  },
+  "plugins": [
+    {
+      "name": "spillway",
+      "source": "./",
+      "description": "Adopt spillway in a repository, operate the home pool, and diagnose the fallback CI from Claude Code."
+    }
+  ]
+}

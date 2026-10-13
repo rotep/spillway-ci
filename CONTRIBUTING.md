@@ -26,6 +26,8 @@ bash -n deploy/*.sh
 shellcheck deploy/*.sh
 ```
 
+If you change `.claude-plugin/` or `skills/`, also run `claude plugin validate .` (Claude Code). It warns that the plugin has no version (on purpose: it follows commits) and about `CLAUDE.md` at the root; nothing else should come up.
+
 ## Pull requests
 
 - One topic per pull request, with a description of why, what, and how it was checked.

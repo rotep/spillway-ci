@@ -26,7 +26,9 @@ permissions:
 
 # No workflow-level concurrency group: a pull_request event that skips every
 # job (another label, a push without the label) would still cancel a fallback
-# run in progress for the same commit.
+# run in progress for the same commit. The group sits on the `ci` job instead,
+# keyed by the branch decide chose, so only a run that will use the pool
+# cancels an older head's CI; skipped jobs never join the group.
 
 jobs:
   decide:
@@ -42,6 +44,7 @@ jobs:
     outputs:
       run: ${{ steps.decide.outputs.run }}
       sha: ${{ steps.decide.outputs.sha }}
+      branch: ${{ steps.decide.outputs.branch }}
     steps:
       # Pin to a release tag or a full commit SHA.
       - id: decide
@@ -50,6 +53,9 @@ jobs:
   ci:
     needs: decide
     if: needs.decide.outputs.run == 'true'
+    concurrency:
+      group: spillway-ci-${{ needs.decide.outputs.branch || needs.decide.outputs.sha }}
+      cancel-in-progress: true
     # On workflow_run this is the default branch's copy of the CI workflow,
     # run against the pull request's head commit.
     uses: ./.github/workflows/ci.yml
@@ -66,5 +72,8 @@ jobs:
       - uses: rotep/spillway-ci/actions/status@v0
         with:
           sha: ${{ needs.decide.outputs.sha }}
-          state: ${{ needs.ci.result == 'success' && 'success' || 'failure' }}
+          # cancelled: a newer head took over (error on the old commit), or a
+          # newer run on this same commit did (it reports; nothing is posted).
+          state: ${{ needs.ci.result == 'success' && 'success' || needs.ci.result == 'cancelled' && 'error' || 'failure' }}
+          unless_head: ${{ needs.ci.result == 'cancelled' && needs.decide.outputs.branch || '' }}
           description: CI on the self-hosted pool ${{ needs.ci.result }}

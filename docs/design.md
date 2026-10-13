@@ -21,7 +21,7 @@ GitHub has no first-party fallback between runner types; a community request for
 ```
 GitHub (hosted CI fails: jobs never started)
   └─ workflow_run ─► spillway.yml in the repository
-        decide   (pool)  : did a failed job never start? fork? → post "spillway / ci: pending"
+        decide   (pool)  : did a failed job never start? fork? still the head? → post "spillway / ci: pending"
         ci       (pool)  : the repository's own CI, called with runs-on "spillway", at the head SHA
         report   (pool)  : post "spillway / ci: success|failure" on the head SHA
 
@@ -38,7 +38,8 @@ Home (outbound HTTPS only)
 
 A short workflow (`templates/spillway.yml`) and two JavaScript actions with no dependencies:
 
-- `actions/decide` reads the failed run's jobs. It runs the pool only if some failed job has no runner and no steps, which is how a job looks when minutes or budget are exhausted or no runner was acquired. A job that started and failed is the code's failure and is not covered. The `spillway` label is the manual entry point. Fork code is refused in both paths.
+- `actions/decide` reads the failed run's jobs. It runs the pool only if some failed job has no runner and no steps, which is how a job looks when minutes or budget are exhausted or no runner was acquired. A job that started and failed is the code's failure and is not covered. The `spillway` label is the manual entry point. Fork code is refused in both paths. A commit that is no longer its branch's head is not run: the pull request moved on, and the newer head gets its own run. When `decide` cannot reach the API after retrying, it posts `spillway / ci` = `error` rather than leaving no status.
+- The `ci` job has a concurrency group keyed by the branch `decide` chose, so a newer head's run cancels an older head's CI on the pool. The group is on the job, not the workflow: a workflow-level group would let events that skip every job (another label, a push without the label) cancel a running fallback.
 - `actions/status` posts the commit status `spillway / ci` on the head SHA. A `workflow_run`'s own checks attach to the default branch, so a status is the way to put the result on the pull request.
 
 The router calls the repository's own CI as a reusable workflow with a `runs-on` input, so there is no copy of the CI to keep in sync. Composite or JavaScript actions are used instead of a shared reusable workflow from the spillway repository, because a reusable workflow owned by someone else cannot use the caller's self-hosted runners.
@@ -56,6 +57,14 @@ Opting in is merging the workflow file. No list to maintain, and a new repositor
 - One k3s node in a VM on Proxmox to start; more nodes join later.
 - Runner pods request CPU and memory. The scheduler is the global cap: a pod that does not fit waits as `Pending` and its job waits in GitHub's queue. PriorityClasses with `preemptionPolicy: Never` let chosen repositories go first without evicting running jobs.
 - Jobs run in the default container mode (no Docker, no privileged pods). The VM's kernel, not the Proxmox host's, sits under the jobs.
+
+### 4. Claude Code plugin
+
+The repository root is also a Claude Code plugin (`.claude-plugin/`, `skills/`), so adopting and operating spillway can be asked of Claude Code directly. The skills hold no rules of their own: `adopt` carries out `templates/adopt-prompt.md`, `pool` runs `deploy/pool.sh`, and `troubleshoot` reads the GitHub side and matches it to `docs/troubleshooting.md`. The plugin has no version, so it follows the commits of this repository.
+
+- The merge rule stays in the adopted repository (`templates/AGENTS.snippet.md`), where every agent reads it, including Claude Code on the web, which does not load plugins.
+- `pool` is started only by the user. The commands that change the pool run only after the user confirms the exact command, and the skill never runs the installer or reads the App's key.
+- The settings `deploy/pool.sh` reads from `SPILLWAY_*` are the plugin's options, so they are asked once instead of typed on every command. None of them is a secret.
 
 ## Security
 

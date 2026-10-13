@@ -20,7 +20,7 @@ Done when: the installer ends with a list of `autoscalingrunnersets`, and each l
 
 ## Phase 2. Adopt repositories (sessions)
 
-For each repository, a session follows [`templates/adopt-prompt.md`](../templates/adopt-prompt.md). The pull request makes the CI callable, adds `.github/workflows/spillway.yml` and the merge rule. While hosted minutes are exhausted the session checks its own pull request through the label path (the repository must be in `include` until the workflow reaches the default branch):
+For each repository, a session follows [`templates/adopt-prompt.md`](../templates/adopt-prompt.md) (in Claude Code with the plugin, `/spillway:adopt`; see the README). The pull request makes the CI callable, adds `.github/workflows/spillway.yml` and the merge rule. While hosted minutes are exhausted the session checks its own pull request through the label path (the repository must be in `include` until the workflow reaches the default branch):
 
 1. Open the pull request; add the label `spillway`.
 2. `spillway / ci` turns green on the head commit.

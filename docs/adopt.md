@@ -48,6 +48,7 @@ The workflow:
 - runs when a CI run fails, and reruns the CI on the pool only when a failed job **never started** (no runner, no steps). A job that started and failed is left alone;
 - runs when a pull request carries the label `spillway` (create the label once; people and agents add it to ask for a run);
 - never runs code from forks;
+- runs only a branch's current head, and cancels an older head's CI on the pool when a newer head starts;
 - posts `spillway / ci` (pending, then success or failure) on the pull request's head commit.
 
 ## 3. Tell people and agents the merge rule
