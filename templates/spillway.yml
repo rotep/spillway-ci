@@ -1,0 +1,70 @@
+# spillway: rerun this repository's CI on the self-hosted pool when the
+# GitHub-hosted jobs never started (minutes or budget ran out, or no runner
+# was acquired), or when a pull request carries the label `spillway`.
+# Copy to .github/workflows/spillway.yml. Discovery registers a runner scale
+# set for this repository once this file is on the default branch.
+#
+# Requirements (docs/adopt.md):
+# - The CI workflow below is callable (`workflow_call` with `runs-on` and `ref`).
+# - Set `workflows:` to the CI workflow's `name:`.
+# Do not add secrets, widen the permissions or change the triggers: this code
+# runs on the owner's own machines.
+
+name: spillway
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+
+# No workflow-level concurrency group: a pull_request event that skips every
+# job (another label, a push without the label) would still cancel a fallback
+# run in progress for the same commit.
+
+jobs:
+  decide:
+    # A public repository is never served, so its jobs would only queue.
+    if: >-
+      github.event.repository.private &&
+      ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure') ||
+      (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'spillway') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'spillway')))
+    runs-on: spillway
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      sha: ${{ steps.decide.outputs.sha }}
+    steps:
+      # Pin to a release tag or a full commit SHA.
+      - id: decide
+        uses: rotep/spillway-ci/actions/decide@v0
+
+  ci:
+    needs: decide
+    if: needs.decide.outputs.run == 'true'
+    # On workflow_run this is the default branch's copy of the CI workflow,
+    # run against the pull request's head commit.
+    uses: ./.github/workflows/ci.yml
+    with:
+      runs-on: '"spillway"'
+      ref: ${{ needs.decide.outputs.sha }}
+
+  report:
+    needs: [decide, ci]
+    if: always() && needs.decide.outputs.run == 'true'
+    runs-on: spillway
+    timeout-minutes: 5
+    steps:
+      - uses: rotep/spillway-ci/actions/status@v0
+        with:
+          sha: ${{ needs.decide.outputs.sha }}
+          state: ${{ needs.ci.result == 'success' && 'success' || 'failure' }}
+          description: CI on the self-hosted pool ${{ needs.ci.result }}

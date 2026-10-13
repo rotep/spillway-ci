@@ -1,0 +1,23 @@
+{
+  "owner": "your-github-user",
+  "appId": "your App ID or client ID",
+  "installationId": 0,
+  "privateKeyPath": "/etc/spillway/app.pem",
+  "workflowPath": ".github/workflows/spillway.yml",
+  "namespace": "arc-runners",
+  "releasePrefix": "spillway-",
+  "scaleSetName": "spillway",
+  "appSecretName": "spillway-github-app",
+  "chart": {
+    "ref": "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set",
+    "version": "0.14.2"
+  },
+  "controllerServiceAccount": { "namespace": "arc-systems", "name": "arc-gha-rs-controller" },
+  "runnerImage": "ghcr.io/actions/actions-runner:2.337.0",
+  "defaults": { "minRunners": 0, "maxRunners": 2, "cpu": "1500m", "memory": "3Gi", "priorityClassName": "spillway-normal" },
+  "repos": {
+    "example-heavy-repo": { "memory": "6Gi", "priorityClassName": "spillway-high" }
+  },
+  "include": [],
+  "exclude": []
+}

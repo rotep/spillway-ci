@@ -1,0 +1,12 @@
+[Unit]
+Description=spillway discovery: one ARC runner scale set per opted-in repository
+After=network-online.target k3s.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=/usr/bin/env node /opt/spillway/discovery/main.mjs --config /etc/spillway/config.json --apply
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full

@@ -1,0 +1,19 @@
+# Order in which waiting runner pods start. preemptionPolicy: Never means a
+# higher priority only jumps the queue; it never evicts a running job.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: spillway-high
+value: 1000
+preemptionPolicy: Never
+globalDefault: false
+description: spillway runners for repositories that should start first.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: spillway-normal
+value: 100
+preemptionPolicy: Never
+globalDefault: false
+description: spillway runners (default).

@@ -1,0 +1,54 @@
+name: CI
+
+# Callable so that spillway.yml can rerun it on the owner's pool while this
+# repository is private and hosted minutes are exhausted. Once the repository
+# is public, discovery stops serving it and hosted runners are free.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: runs-on as JSON, for example '"spillway"'.
+        type: string
+        default: '"ubuntu-latest"'
+      ref:
+        description: Commit to check out. Empty means the event's default.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ fromJSON(inputs.runs-on || '"ubuntu-latest"') }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  shell:
+    runs-on: ${{ fromJSON(inputs.runs-on || '"ubuntu-latest"') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      # Hosted images ship shellcheck; the pool's runner image does not.
+      - if: inputs.ref
+        run: command -v shellcheck >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck; }
+      - run: bash -n deploy/*.sh
+      - run: shellcheck deploy/*.sh

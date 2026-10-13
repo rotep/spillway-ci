@@ -1,0 +1,24 @@
+name: spillway status
+description: Post a commit status (the fallback result) on a commit, normally the pull request's head.
+inputs:
+  token:
+    description: Token with statuses:write.
+    default: ${{ github.token }}
+  sha:
+    description: Full commit SHA to post on.
+    required: true
+  state:
+    description: pending, success, failure or error.
+    required: true
+  context:
+    description: Commit status context.
+    default: spillway / ci
+  description:
+    description: Short text shown next to the status (140 characters at most).
+    default: ''
+  target_url:
+    description: Link for the status. Defaults to this workflow run.
+    default: ''
+runs:
+  using: node24
+  main: index.mjs
