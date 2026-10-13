@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in spillway does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove host names, addresses, account and repository names, and anything secret before posting.
+        Security problems go to private vulnerability reporting, not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Part
+      options:
+        - actions/decide or actions/status
+        - templates/spillway.yml
+        - discovery
+        - deploy scripts
+        - documentation
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The decide step's log, or `bash deploy/pool.sh status` / `plan` output.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: spillway commit
+      description: The commit SHA or tag you pinned.
+    validations:
+      required: true
