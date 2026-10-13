@@ -22,6 +22,9 @@ test('the workflow template keeps its guard rails', () => {
   assert.match(wf, /if: >-\n\s+github\.event\.repository\.private &&\n/, 'public repositories never reach the pool');
   assert.equal(wf.match(/runs-on: spillway/g)?.length, 2);
   assert.match(wf, /runs-on: '"spillway"'/);
+  assert.doesNotMatch(wf, /^concurrency:/m, 'a workflow-level group would let skipped events cancel a running fallback');
+  assert.match(wf, /\n {2}ci:\n(?: {4}.+\n)*? {4}concurrency:\n {6}group: spillway-ci-\$\{\{ needs\.decide\.outputs\.branch \|\| needs\.decide\.outputs\.sha \}\}\n {6}cancel-in-progress: true\n/, 'the ci job cancels an older head of the same branch');
+  assert.match(wf, /branch: \$\{\{ steps\.decide\.outputs\.branch \}\}/);
 });
 
 test('the scale set name, label and status context agree across templates, actions and config', () => {

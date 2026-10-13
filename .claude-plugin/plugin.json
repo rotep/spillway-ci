@@ -1,0 +1,34 @@
+{
+  "name": "spillway",
+  "description": "Adopt spillway in a repository, operate the home pool, and diagnose the fallback CI from Claude Code.",
+  "author": {
+    "name": "rotep",
+    "url": "https://github.com/rotep"
+  },
+  "homepage": "https://github.com/rotep/spillway-ci",
+  "repository": "https://github.com/rotep/spillway-ci",
+  "license": "Apache-2.0",
+  "keywords": ["github-actions", "ci", "self-hosted-runners", "proxmox", "actions-runner-controller"],
+  "userConfig": {
+    "pve_host": {
+      "type": "string",
+      "title": "Proxmox host",
+      "description": "ssh destination of the Proxmox host that runs the pool VM (SPILLWAY_PVE_HOST). Leave empty for pve-01."
+    },
+    "ssh": {
+      "type": "string",
+      "title": "ssh client",
+      "description": "ssh client deploy/pool.sh uses (SPILLWAY_SSH), for example ssh.exe in WSL. Leave empty for ssh."
+    },
+    "net": {
+      "type": "string",
+      "title": "Pool network",
+      "description": "First three octets of the pool's /24 (SPILLWAY_NET), as given to the installer. Leave empty for 10.98.0."
+    },
+    "checkout": {
+      "type": "directory",
+      "title": "spillway clone",
+      "description": "Your local git clone of spillway. /spillway:pool runs deploy/pool.sh from it, and its update command installs that clone's HEAD in the VM. Leave empty to use the plugin's own copy (every command except update)."
+    }
+  }
+}

@@ -2,8 +2,9 @@ name: spillway decide
 description: >-
   Decide whether to run the repository's CI on the self-hosted pool: only when
   GitHub-hosted jobs never started (minutes or budget exhausted, no runner
-  acquired) or when the pull request carries the opt-in label. Posts a pending
-  commit status on the head SHA when it decides to run.
+  acquired) or when the pull request carries the opt-in label, and only for the
+  branch's current head. Posts a pending commit status on the head SHA when it
+  decides to run, and an error status when it cannot decide.
 inputs:
   token:
     description: Token with actions:read and statuses:write.
@@ -19,6 +20,8 @@ outputs:
     description: '"true" when the CI should run on the pool.'
   sha:
     description: The head SHA to check out and report on.
+  branch:
+    description: The head branch, which keys the CI's concurrency group so a newer head cancels an older one.
 runs:
   using: node24
   main: index.mjs

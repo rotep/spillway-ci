@@ -9,7 +9,7 @@ Code, comments, docs and commit messages in English (the repository is meant to 
 ## Work
 
 - Never push to `main` directly: branch (`feat/…`, `fix/…`, `docs/…`, `ci/…`; cloud sessions may use `claude/…`), pull request, squash merge. While bootstrapping (2026-10-12), before any CI could run, the owner pushed the first commits to `main` directly; the pool has been running since that day, so that has ended.
-- Before pushing: `npm test` (Node 22 or later, no dependencies) and `bash -n deploy/*.sh`. CI also runs `shellcheck deploy/*.sh`.
+- Before pushing: `npm test` (Node 22 or later, no dependencies) and `bash -n deploy/*.sh`. CI also runs `shellcheck deploy/*.sh`. After changing `.claude-plugin/` or `skills/`, also `claude plugin validate .` (the warnings about the missing version and `CLAUDE.md` are expected).
 - Keep zero runtime dependencies. Adding a package is a branch point.
 - No secrets, host names, addresses or account names in files, commits or pull requests beyond the documented generic defaults. Test values that look like keys are built at runtime.
 - Write as if the repository were public, because it is meant to be: commit messages, pull request bodies and comments do not name the owner's private repositories, hosts, VM IDs, App or installation IDs, or run IDs. Owner-specific records belong in the owner's private repositories.

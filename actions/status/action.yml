@@ -19,6 +19,12 @@ inputs:
   target_url:
     description: Link for the status. Defaults to this workflow run.
     default: ''
+  unless_head:
+    description: >-
+      A branch name. When set, post nothing while sha is still that branch's
+      head: a newer run on the same commit owns the status. Used for a CI that
+      was cancelled.
+    default: ''
 runs:
   using: node24
   main: index.mjs

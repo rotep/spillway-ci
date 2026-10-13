@@ -13,10 +13,27 @@ export class GitHubError extends Error {
   }
 }
 
-export function createClient({ token, baseUrl = 'https://api.github.com', fetchImpl = globalThis.fetch, userAgent = 'spillway' }) {
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// `retries` repeats a request that failed in the network ("fetch failed") or
+// with a 5xx, after 2, 4, 8 … seconds. A 4xx is an answer and is not repeated.
+export function createClient({ token, baseUrl = 'https://api.github.com', fetchImpl = globalThis.fetch, userAgent = 'spillway', retries = 0, sleep = delay }) {
   if (!token) throw new Error('A GitHub token is required.');
 
   async function request(method, path, body) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await requestOnce(method, path, body);
+      } catch (error) {
+        const transient = error instanceof TypeError || (error instanceof GitHubError && error.status >= 500);
+        if (!transient || attempt >= retries) throw error;
+        console.log(`${method} ${path}: ${error.message}; retrying (${attempt + 1}/${retries}).`);
+        await sleep(2000 * 2 ** attempt);
+      }
+    }
+  }
+
+  async function requestOnce(method, path, body) {
     const res = await fetchImpl(`${baseUrl}${path}`, {
       method,
       headers: {
@@ -29,11 +46,13 @@ export function createClient({ token, baseUrl = 'https://api.github.com', fetchI
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
     if (!res.ok) {
-      throw new GitHubError(`${method} ${path}: HTTP ${res.status}${data?.message ? ` ${data.message}` : ''}`, res.status);
+      // A 5xx from a proxy or GitHub's edge may be an HTML page.
+      let message;
+      try { message = JSON.parse(text)?.message; } catch { message = undefined; }
+      throw new GitHubError(`${method} ${path}: HTTP ${res.status}${message ? ` ${message}` : ''}`, res.status);
     }
-    return data;
+    return text ? JSON.parse(text) : null;
   }
 
   // Follows page numbers until a short page. `key` names the array inside the
@@ -51,4 +70,19 @@ export function createClient({ token, baseUrl = 'https://api.github.com', fetchI
   }
 
   return { request, paginate };
+}
+
+// The commit a branch (or, failing that, a tag) points at now, or undefined
+// when neither exists. Needs only `contents: read`.
+export async function refHead({ client, repo, name }) {
+  const encoded = name.split('/').map(encodeURIComponent).join('/');
+  for (const kind of ['heads', 'tags']) {
+    try {
+      const ref = await client.request('GET', `/repos/${repo.owner}/${repo.name}/git/ref/${kind}/${encoded}`);
+      return { kind, sha: ref?.object?.sha };
+    } catch (error) {
+      if (!(error instanceof GitHubError && error.status === 404)) throw error;
+    }
+  }
+  return undefined;
 }
